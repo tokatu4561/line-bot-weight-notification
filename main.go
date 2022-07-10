@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/tokatu4561/line-bot/models"
 	"github.com/line/line-bot-sdk-go/linebot"
 )
 
@@ -19,13 +20,13 @@ func main() {
 		log.Fatal(err)
 	}
 	// // weatherパッケージパッケージから天気情報の文字列をを取得する
-	// result, err := weather.GetWeather()
+	result, err := weather.GetWeather()
 	// エラーに値があればログに出力し終了する
 	if err != nil {
 		log.Fatal(err)
 	}
 	// テキストメッセージを生成する
-	message := linebot.NewTextMessage("Hello World")
+	message := linebot.NewTextMessage(result)
 	// テキストメッセージを友達登録しているユーザー全員に配信する
 	if _, err := bot.BroadcastMessage(message).Do(); err != nil {
 		log.Fatal(err)
