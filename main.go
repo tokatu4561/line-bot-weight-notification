@@ -1,34 +1,47 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"net/http"
 	"os"
+	"time"
+	line "tokatu4561/line-bot-weight/service"
 
-	"github.com/tokatu4561/line-bot/models"
 	"github.com/line/line-bot-sdk-go/linebot"
 )
 
+type application struct {
+}
+
 func main() {
-	// LINE Botクライアント生成する
-	// BOT にはチャネルシークレットとチャネルトークンを環境変数から読み込み引数に渡す
-	bot, err := linebot.New(
-		os.Getenv("LINE_BOT_CHANNEL_SECRET"),
-		os.Getenv("LINE_BOT_CHANNEL_TOKEN"),
-	)
-	// エラーに値があればログに出力し終了する
+	app := &application{}
+	err := app.serve()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
-	// // weatherパッケージパッケージから天気情報の文字列をを取得する
-	result, err := weather.GetWeather()
-	// エラーに値があればログに出力し終了する
-	if err != nil {
-		log.Fatal(err)
-	}
+
+	line, err := line.LineConnection()
+
+	alertMessage := "今日の体重を教えてください"
 	// テキストメッセージを生成する
-	message := linebot.NewTextMessage(result)
+	message := linebot.NewTextMessage(alertMessage)
 	// テキストメッセージを友達登録しているユーザー全員に配信する
-	if _, err := bot.BroadcastMessage(message).Do(); err != nil {
+	if _, err := line.Client.BroadcastMessage(message).Do(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+
+func (app *application) serve() error {
+	srv := &http.Server{
+		Addr:              fmt.Sprintf(":%s", os.Getenv("PORT")),
+		Handler:           app.routes(),
+		IdleTimeout:       30 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      5 * time.Second,
+	}
+
+	return srv.ListenAndServe()
 }
