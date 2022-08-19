@@ -102,7 +102,7 @@ func (m *DBModel) UpdateUser(u User) error {
 	return nil
 }
 
-func (m *DBModel) GetMaxWeight(line_id int) (int, error) {
+func (m *DBModel) GetMaxWeight(id int) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -114,9 +114,9 @@ func (m *DBModel) GetMaxWeight(line_id int) (int, error) {
 		from
 			users u
 			left join weight_historys w on (u.id = w.user_id)
-		where u.line_id = ?`
+		where u.id = ?`
 
-	row := m.DB.QueryRowContext(ctx, query, line_id)
+	row := m.DB.QueryRowContext(ctx, query, id)
 
 	err := row.Scan(
 		&maxData,

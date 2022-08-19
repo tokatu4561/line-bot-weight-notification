@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -22,6 +21,9 @@ func WeightRegist(w http.ResponseWriter, r *http.Request) {
 	}
 
 	lineEvents, err := line.Client.ParseRequest(r)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	for _, event := range lineEvents {
 		// イベントがメッセージの受信だった場合
@@ -33,9 +35,8 @@ func WeightRegist(w http.ResponseWriter, r *http.Request) {
 				// replyMessage := message.Text
 				err = recordWeight(line, event)
 				if err != nil {
-					writeJSON(w, http.StatusOK)
+					log.Fatalln(err)
 				}
-				break
 			case *linebot.LocationMessage:
 				break		
 			default:
@@ -45,8 +46,8 @@ func WeightRegist(w http.ResponseWriter, r *http.Request) {
 }
 
 func recordWeight(line *line.Line, event *linebot.Event) error {
-	var userID int
-	userID, _ = strconv.Atoi(event.Source.UserID)
+	var lineID int
+	lineID, _ = strconv.Atoi(event.Source.UserID)
 
 	var connectionString string = fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", 
 	os.Getenv("DB_HOST"), 
@@ -67,37 +68,45 @@ func recordWeight(line *line.Line, event *linebot.Event) error {
 	DBModel := &models.DBModel{
 		DB: db,
 	}
-	err = DBModel.AddUser(userID)
+
+	user, err := DBModel.GetOneUser(lineID)
+	if err != nil {
+		// ユーザーが存在しなかった場合新規作成
+		err = DBModel.AddUser(lineID)
+		if err != nil {
+			return err
+		}	
+		user, _ = DBModel.GetOneUser(lineID)
+	}
+
+	maxWeight, err := DBModel.GetMaxWeight(user.ID)
 	if err != nil {
 		return err
 	}
 
-	maxWeight, err := DBModel.GetMaxWeight(userID)
-	if err != nil {
-		return err
-	}
+	message :=event.Message.(*linebot.TextMessage).Text
 
-	replyMessage := fmt.Sprintf("あなたの最も痩せていた体重は%dkgです", maxWeight)
+	replyMessage := fmt.Sprintf("%skg! あなたの最も痩せていた体重は%dkgです", message ,maxWeight)
 	_, err = line.Client.ReplyMessage(event.ReplyToken, linebot.NewTextMessage(replyMessage)).Do()
 
 	return err
 }
 
-func writeJSON(w http.ResponseWriter, status int, data interface{}, headers ...http.Header) error {
-	out, err := json.MarshalIndent(data, "", "\t")
-	if err != nil {
-		return err
-	}
+// func writeJSON(w http.ResponseWriter, status int, data interface{}, headers ...http.Header) error {
+// 	out, err := json.MarshalIndent(data, "", "\t")
+// 	if err != nil {
+// 		return err
+// 	}
 
-	if len(headers) > 0 {
-		for k, v := range headers[0] {
-			w.Header()[k] = v
-		}
-	}
+// 	if len(headers) > 0 {
+// 		for k, v := range headers[0] {
+// 			w.Header()[k] = v
+// 		}
+// 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	w.Write(out)
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.WriteHeader(status)
+// 	w.Write(out)
 
-	return nil
-}
+// 	return nil
+// }
