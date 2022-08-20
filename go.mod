@@ -1,5 +1,6 @@
 module tokatu4561/line-bot-weight/notification-service
 
++// +heroku goVersion go 1.18
 go 1.18
 
 require (
