@@ -5,34 +5,24 @@ import (
 	"log"
 	"net/http"
 	"time"
-	"tokatu4561/line-bot-weight/handlers"
-	line "tokatu4561/line-bot-weight/service"
+	"tokatu4561/line-bot/record-service/handlers"
 
 	"github.com/go-chi/chi"
-	"github.com/line/line-bot-sdk-go/linebot"
+	"github.com/joho/godotenv"
 )
 
 type application struct {
 }
 
 func main() {
+	_ = godotenv.Load(".env")
+
+	log.SetFlags(log.Llongfile)
+
 	app := &application{}
 	err := app.serve()
 	if err != nil {
 		log.Fatalln(err)
-	}
-
-	line, err := line.LineConnection()
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	alertMessage := "今日の体重を教えてください"
-	// テキストメッセージを生成する
-	message := linebot.NewTextMessage(alertMessage)
-	// テキストメッセージを友達登録しているユーザー全員に配信する
-	if _, err := line.Client.BroadcastMessage(message).Do(); err != nil {
-		log.Fatal(err)
 	}
 }
 
@@ -55,8 +45,7 @@ func(app *application) serve() error {
 func routes() http.Handler  {
 	mux := chi.NewRouter()
 
-	// mux.Get("/", handlers.WeightRegist)
-	mux.Post("/weight-regist",handlers.WeightRegist)
+	mux.Post("/weight-regist", handlers.WeightRegist)
 
 	return mux
 }
