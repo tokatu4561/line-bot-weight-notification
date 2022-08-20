@@ -4,12 +4,12 @@ import (
 	"log"
 	line "tokatu4561/line-bot-weight/notification-service/service"
 
-	"github.com/joho/godotenv"
+	// "github.com/joho/godotenv" herokuデプロイ様ににコメントアウト
 	"github.com/line/line-bot-sdk-go/linebot"
 )
 
 func main() {
-	_ = godotenv.Load(".env")
+	// _ = godotenv.Load(".env") // herokuデプロイ様ににコメントアウト
 	line, err := line.LineConnection()
 	if err != nil {
 		log.Fatalln(err)
